@@ -11,6 +11,7 @@
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <ws2812b.h>
 #include "driver/gpio.h"
 #include "driver/rmt.h"
 #include "driver/periph_ctrl.h"
@@ -353,12 +354,15 @@ void main_task()
 }
 
 void task_led(void *argument){
-    rmt_config_t rmt_struct = {
-        .rmt_mode = RMT_MODE_TX,
-        .channel = RMT_CHANNEL_1,
-        .gpio_num = GPIO_NUM_21,
-    };
-    
+    ws2812b_t *led_strip = new_ws2812b(1, GPIO_NUM_18, RMT_CHANNEL_0);
+    uint8_t led_color[3] = {0, 0 ,0};
+    uint32_t counter_clk_hz = 0;
+    while(1){
+        set_pixel(led_strip, led_color);
+        vTaskDelay(pdMS_TO_TICKS(10));
+        led_flush(led_strip);
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
 }
 
 void app_main()
