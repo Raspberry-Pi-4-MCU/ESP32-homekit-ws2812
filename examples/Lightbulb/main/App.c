@@ -123,17 +123,17 @@ static void SaveAccessoryState(void) {
  */
 static HAPAccessory accessory = { .aid = 1,
                                   .category = kHAPAccessoryCategory_Sensors,
-                                  .name = "CO Sensor",
+                                  .name = "night_light",
                                   .manufacturer = "Bohung",
-                                  .model = "COSensor5,6",
+                                  .model = "night_light5,6",
                                   .serialNumber = "099DB48E9999",
                                   .firmwareVersion = "5",
                                   .hardwareVersion = "6",
                                   .services = (const HAPService* const[]) { &accessoryInformationService,
                                                                             &hapProtocolInformationService,
                                                                             &pairingService,
-                                                                            // &lightBulbService,
-                                                                            &COService,
+                                                                            &lightBulbService,
+                                                                            // &COService,
                                                                             NULL },
                                   .callbacks = { .identify = IdentifyAccessory } };
 
@@ -169,9 +169,13 @@ HAPError HandleLightBulbOnWrite(
     HAPLogInfo(&kHAPLog_Default, "%s: %s", __func__, value ? "true" : "false");
     if (accessoryConfiguration.state.lightBulbOn != value) {
         accessoryConfiguration.state.lightBulbOn = value;
-
+        unsigned long sig = 0;
+        if(value)
+            sig = 1;
+        else
+            sig = 0;
+        xQueueSend(MsgQueue, (unsigned long)&sig, 0);
         SaveAccessoryState();
-
         HAPAccessoryServerRaiseEvent(server, request->characteristic, request->service, request->accessory);
     }
 
@@ -219,9 +223,7 @@ void AccessoryNotification(
 void AppCreate(HAPAccessoryServerRef* server, HAPPlatformKeyValueStoreRef keyValueStore) {
     HAPPrecondition(server);
     HAPPrecondition(keyValueStore);
-
     HAPLogInfo(&kHAPLog_Default, "%s", __func__);
-
     HAPRawBufferZero(&accessoryConfiguration, sizeof accessoryConfiguration);
     accessoryConfiguration.server = server;
     accessoryConfiguration.keyValueStore = keyValueStore;

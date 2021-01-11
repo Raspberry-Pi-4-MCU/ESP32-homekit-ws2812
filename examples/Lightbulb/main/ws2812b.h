@@ -6,12 +6,12 @@
 #include "driver/gpio.h"
 #include "driver/rmt.h"
 #include "driver/periph_ctrl.h"
+#define CLOCK_DIV 2
 
-// 25ns
-#define ws2812_t0h_ticks 40000000 / 1e9 * 350 // (0.4us / 25ns)
-#define ws2812_t0l_ticks 40000000 / 1e9 * 1000// (0.8us / 25ns)
-#define ws2812_t1h_ticks 40000000 / 1e9 * 1000// (0.85us / 25ns)
-#define ws2812_t1l_ticks 40000000 / 1e9 * 350// (0.45us / 25ns)
+#define ws2812_t0h_ticks 80000000 / CLOCK_DIV / 1e9 * 350 // (0.4us / 25ns)
+#define ws2812_t0l_ticks 80000000 / CLOCK_DIV / 1e9 * 1000// (0.8us / 25ns)
+#define ws2812_t1h_ticks 80000000 / CLOCK_DIV / 1e9 * 1000// (0.85us / 25ns)
+#define ws2812_t1l_ticks 80000000 / CLOCK_DIV / 1e9 * 350// (0.45us / 25ns)
 
 typedef struct  ws2812b_t  ws2812b_t;
 typedef struct led_config_t led_config_t;

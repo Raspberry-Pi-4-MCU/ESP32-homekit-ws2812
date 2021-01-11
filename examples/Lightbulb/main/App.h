@@ -23,6 +23,8 @@ extern "C" {
 #pragma clang assume_nonnull begin
 #endif
 
+#include <ws2812b.h>
+xQueueHandle MsgQueue;
 /**
  * Identify routine. Used to locate the accessory.
  */

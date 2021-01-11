@@ -35,7 +35,7 @@ ws2812b_t* new_ws2812b(uint32_t strip ,gpio_num_t gpio_num, rmt_channel_t rmt_ch
     ws2812b->strip = strip;
     /** rmt config */
     rmt_config_t config = RMT_DEFAULT_CONFIG_TX(gpio_num, rmt_channel);
-    config.clk_div = 2;
+    config.clk_div = CLOCK_DIV;
     rmt_config(&config);
     rmt_driver_install(rmt_channel, 0, 0);
     rmt_translator_init(rmt_channel, ws2812_rmt_adapter);
@@ -57,7 +57,6 @@ void set_pixel(ws2812b_t *ws2812b, uint8_t *led_color){
 * @param ws2812b ws2812 object 
 */
 void led_flush(ws2812b_t* ws2812b){
-    printf("%d\n", ws2812b->strip * 3);
     rmt_write_sample(ws2812b->channel, ws2812b->led_config, ws2812b->strip * 3, true);
     rmt_wait_tx_done(ws2812b->channel, pdMS_TO_TICKS(100));
 }

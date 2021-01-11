@@ -11,7 +11,6 @@
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include <ws2812b.h>
 #include "driver/gpio.h"
 #include "driver/rmt.h"
 #include "driver/periph_ctrl.h"
@@ -355,10 +354,29 @@ void main_task()
 
 void task_led(void *argument){
     ws2812b_t *led_strip = new_ws2812b(1, GPIO_NUM_18, RMT_CHANNEL_0);
-    uint8_t led_color[3] = {0, 0 ,0};
-    uint32_t counter_clk_hz = 0;
+    uint8_t led_color_table[] = {0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0 ,255, 128, 128 ,0, 0, 128, 128};
+    uint8_t *ptr_led_color  = led_color_table;
+    uint32_t rcv = 0;
+    uint8_t light_idx = 0;
     while(1){
-        set_pixel(led_strip, led_color);
+        rcv = 0;
+        if(xQueueReceive( MsgQueue, &rcv, 100/portTICK_RATE_MS ) == pdPASS){
+            if(rcv){
+                uint8_t led_offset;
+                if(light_idx > (sizeof(led_color_table) - sizeof(uint8_t)) / 3)
+                    light_idx = 0;
+                light_idx++;
+                led_offset = (3 * light_idx);
+                if(led_offset == 0)
+                    led_offset = 3;
+                ptr_led_color = led_color_table + led_offset;
+            }
+            else
+            {
+                ptr_led_color = led_color_table;
+            }
+        }
+        set_pixel(led_strip, ptr_led_color);
         vTaskDelay(pdMS_TO_TICKS(10));
         led_flush(led_strip);
         vTaskDelay(pdMS_TO_TICKS(10));
@@ -367,6 +385,7 @@ void task_led(void *argument){
 
 void app_main()
 {
-    // xTaskCreate(main_task, "main_task", 6 * 1024, NULL, 6, NULL);
+    MsgQueue = xQueueCreate(10, sizeof(unsigned long));
+    xTaskCreate(main_task, "main_task", 6 * 1024, NULL, 6, NULL);
     xTaskCreate(task_led, "task_led", 6 * 1024, NULL, 6, NULL);
 }

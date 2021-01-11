@@ -68,14 +68,13 @@ esp_err_t app_wifi_connect(void)
                                                         &instance_got_ip));
     wifi_config_t wifi_config = {
         .sta = {
-            .ssid = "7734_New",
-            .password = "1qazXSW2!"
+            .ssid = "Wireless",
+            .password = "i300tdss"
         },
     };
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
     ESP_ERROR_CHECK(esp_wifi_start() );
-
     ESP_LOGI(TAG, "wifi_init_sta finished.");
     return ESP_OK;
 }
