@@ -6,8 +6,10 @@
 #include "driver/gpio.h"
 #include "driver/rmt.h"
 #include "driver/periph_ctrl.h"
+
 #define CLOCK_DIV 2
 
+/** clock is 8HZ*/
 #define ws2812_t0h_ticks 80000000 / CLOCK_DIV / 1e9 * 350 // (0.4us / 25ns)
 #define ws2812_t0l_ticks 80000000 / CLOCK_DIV / 1e9 * 1000// (0.8us / 25ns)
 #define ws2812_t1h_ticks 80000000 / CLOCK_DIV / 1e9 * 1000// (0.85us / 25ns)
