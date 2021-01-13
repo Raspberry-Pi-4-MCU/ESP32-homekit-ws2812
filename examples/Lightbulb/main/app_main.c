@@ -360,15 +360,13 @@ void task_led(void *argument){
     uint8_t light_idx = 0;
     while(1){
         rcv = 0;
-        if(xQueueReceive( MsgQueue, &rcv, 100/portTICK_RATE_MS ) == pdPASS){
+        if(xQueueReceive(MsgQueue, &rcv, 100 / portTICK_RATE_MS) == pdPASS){
             if(rcv){
                 uint8_t led_offset;
                 if(light_idx > (sizeof(led_color_table) - sizeof(uint8_t)) / 3)
-                    light_idx = 0;
+                    light_idx = 1;
                 light_idx++;
                 led_offset = (3 * light_idx);
-                if(led_offset == 0)
-                    led_offset = 3;
                 ptr_led_color = led_color_table + led_offset;
             }
             else
@@ -387,5 +385,5 @@ void app_main()
 {
     MsgQueue = xQueueCreate(10, sizeof(unsigned long));
     xTaskCreate(main_task, "main_task", 6 * 1024, NULL, 6, NULL);
-    xTaskCreate(task_led, "task_led", 6 * 1024, NULL, 6, NULL);
+    xTaskCreate(task_led, "task_led", 6 * 1024, NULL, 5, NULL);
 }
