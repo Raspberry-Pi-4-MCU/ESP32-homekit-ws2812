@@ -274,6 +274,7 @@ static void InitializeIP() {
     platform.hapAccessoryServerOptions.ip.accessoryServerStorage = &ipAccessoryServerStorage;
 
     platform.hapPlatform.ip.tcpStreamManager = &platform.tcpStreamManager;
+    // send initial signal
     uint32_t send_data_temp = 100;
     app_wifi_connect(wificonfig_read());
     xQueueSend(MsgQueue, &send_data_temp, 100/portTICK_RATE_MS);
@@ -289,14 +290,16 @@ static void InitializeIP() {
             }
             else
             {
+                // reset wifi
                 ESP_ERROR_CHECK(esp_wifi_stop());
                 esp_event_loop_delete_default();
                 smart_wifi();
             }   
         }
     }
+    // send complete signal
     send_data_temp = 101;
-    xQueueSend(MsgQueue, &send_data_temp, 100/portTICK_RATE_MS);
+    xQueueSend(MsgQueue, &send_data_temp, 100 / portTICK_RATE_MS);
 }
 #endif
 
