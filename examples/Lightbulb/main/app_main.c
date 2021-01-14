@@ -16,7 +16,9 @@
 #include "driver/periph_ctrl.h"
 #include "App.h"
 #include "DB.h"
-
+#include "nvs_flash.h"
+#include "esp_wifi.h"
+#include "freertos/event_groups.h"
 #define IP 1
 #include "HAP.h"
 #include "HAPPlatform+Init.h"
@@ -26,6 +28,7 @@
 #include "HAPPlatformMFiHWAuth+Init.h"
 #include "HAPPlatformMFiTokenAuth+Init.h"
 #include "HAPPlatformRunLoop+Init.h"
+#include "wificonfig.h"
 #if IP
 #include "HAPPlatformServiceDiscovery+Init.h"
 #include "HAPPlatformTCPStreamManager+Init.h"
@@ -36,8 +39,9 @@ static bool requestedFactoryReset = false;
 static bool clearPairings = false;
 
 #define PREFERRED_ADVERTISING_INTERVAL (HAPBLEAdvertisingIntervalCreateFromMilliseconds(417.5f))
-void app_wifi_init(void);
-esp_err_t app_wifi_connect(void);
+extern void smart_wifi(void);
+extern void app_wifi_init(void);
+extern esp_err_t app_wifi_connect(wifi_config_t);
 /**
  * Global platform objects.
  * Only tracks objects that will be released in DeinitializePlatform.
@@ -270,9 +274,29 @@ static void InitializeIP() {
     platform.hapAccessoryServerOptions.ip.accessoryServerStorage = &ipAccessoryServerStorage;
 
     platform.hapPlatform.ip.tcpStreamManager = &platform.tcpStreamManager;
-
-    // Connect to Wi-Fi
-    app_wifi_connect();
+    uint32_t send_data_temp = 100;
+    app_wifi_connect(wificonfig_read());
+    xQueueSend(MsgQueue, &send_data_temp, 100/portTICK_RATE_MS);
+    // wait network connect
+    while(1)
+    {
+        int rcv = -1;
+        if(xQueueReceive(netwrok_connect_signal, &rcv, 100/portTICK_RATE_MS) == pdPASS)
+        {
+            if(rcv)
+            {
+                break;
+            }
+            else
+            {
+                ESP_ERROR_CHECK(esp_wifi_stop());
+                esp_event_loop_delete_default();
+                smart_wifi();
+            }   
+        }
+    }
+    send_data_temp = 101;
+    xQueueSend(MsgQueue, &send_data_temp, 100/portTICK_RATE_MS);
 }
 #endif
 
@@ -354,35 +378,46 @@ void main_task()
 
 void task_led(void *argument){
     ws2812b_t *led_strip = new_ws2812b(1, GPIO_NUM_18, RMT_CHANNEL_0);
-    uint8_t led_color_table[] = {0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0 ,255, 128, 128 ,0, 0, 128, 128};
+    uint8_t led_color_table[] = {0, 0, 0, 255, 128, 0, 0, 255, 128, 0, 0 ,255, 128, 128 ,0, 0, 128, 128};
+    uint8_t alarm_led[] = {0, 255, 0, 255 ,0 ,0};
     uint8_t *ptr_led_color  = led_color_table;
+    uint8_t *ptr_alarm_led = alarm_led;
+    uint8_t *ptr_led = NULL;
     uint32_t rcv = 0;
     uint8_t light_idx = 0;
     while(1){
         rcv = 0;
-        if(xQueueReceive(MsgQueue, &rcv, 100 / portTICK_RATE_MS) == pdPASS){
-            if(rcv){
-                uint8_t led_offset;
-                if(light_idx > (sizeof(led_color_table) - sizeof(uint8_t)) / 3)
-                    light_idx = 1;
-                light_idx++;
-                led_offset = (3 * light_idx);
-                ptr_led_color = led_color_table + led_offset;
+        if(xQueueReceive(MsgQueue, &rcv, 1000 / portTICK_RATE_MS) == pdPASS){
+            if(rcv == 100 || rcv == 101){
+                ptr_led = ptr_alarm_led + (rcv - 100) * 3;
             }
-            else
-            {
-                ptr_led_color = led_color_table;
+            else { 
+                if(rcv){
+                    uint8_t led_offset;
+                    if(light_idx > (sizeof(led_color_table) - sizeof(uint8_t)) / 3)
+                        light_idx = 1;
+                    light_idx++;
+                    led_offset = (3 * light_idx);
+                    ptr_led_color = led_color_table + led_offset;
+                }
+                else
+                {
+                    ptr_led_color = led_color_table;
+                }
+                ptr_led = ptr_led_color;
             }
         }
-        set_pixel(led_strip, ptr_led_color);
-        vTaskDelay(pdMS_TO_TICKS(10));
+        set_pixel(led_strip, ptr_led);
+        vTaskDelay(pdMS_TO_TICKS(5));
         led_flush(led_strip);
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(pdMS_TO_TICKS(5));
     }
 }
 
 void app_main()
 {
+    ESP_ERROR_CHECK(nvs_flash_init());
+    wificonfig_initial();
     MsgQueue = xQueueCreate(10, sizeof(unsigned long));
     xTaskCreate(main_task, "main_task", 6 * 1024, NULL, 6, NULL);
     xTaskCreate(task_led, "task_led", 6 * 1024, NULL, 5, NULL);

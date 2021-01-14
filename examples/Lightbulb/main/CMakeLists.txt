@@ -1,3 +1,3 @@
-idf_component_register(SRCS ./app_wifi.c ./app_main.c ./DB.c ./App.c ./ws2812b.c
+idf_component_register(SRCS ./app_wifi.c ./app_main.c ./DB.c ./App.c ./ws2812b.c ./app_smart_wifi.c ./wificonfig.c
                        INCLUDE_DIRS ".")
 add_definitions(-DHAP_LOG_LEVEL=${CONFIG_HAP_LOG_LEVEL})
