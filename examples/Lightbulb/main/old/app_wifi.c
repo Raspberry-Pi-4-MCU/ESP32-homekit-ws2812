@@ -14,6 +14,7 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 #include "wificonfig.h"
+#include "wificonnect.h"
 /* The examples use WiFi configuration that you can set via project configuration menu
    If you'd rather not, just change the below entries to strings with
    the config you want - ie #define EXAMPLE_ESP_WIFI_SSID "mywifissid"
@@ -34,7 +35,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         // esp_wifi_connect();
         ESP_LOGW(TAG, "Connect to the AP failed. Retrying.");
         disconnect_signal = 0;
-        xQueueSend(netwrok_connect_signal, &disconnect_signal, 100/portTICK_RATE_MS);
+        xQueueSend(netwrok_connect_signal, &disconnect_signal, 100 / portTICK_RATE_MS);
         // esp_event_loop_delete_default();
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         disconnect_signal = 1;
@@ -70,7 +71,7 @@ esp_err_t app_wifi_connect(wifi_config_t wifi_config)
                                                         &instance_got_ip));
                                                         
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
+    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
     ESP_LOGI(TAG, "wifi_init_sta finished.");
     return ESP_OK;

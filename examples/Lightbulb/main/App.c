@@ -125,10 +125,10 @@ static HAPAccessory accessory = { .aid = 1,
                                   .category = kHAPAccessoryCategory_Sensors,
                                   .name = "night_light",
                                   .manufacturer = "Bohung",
-                                  .model = "night_light5,6",
-                                  .serialNumber = "099DB48E9999",
-                                  .firmwareVersion = "5",
-                                  .hardwareVersion = "6",
+                                  .model = "night_light1,1",
+                                  .serialNumber = "099FFF8E9999",
+                                  .firmwareVersion = "1",
+                                  .hardwareVersion = "1",
                                   .services = (const HAPService* const[]) { &accessoryInformationService,
                                                                             &hapProtocolInformationService,
                                                                             &pairingService,
@@ -172,9 +172,7 @@ HAPError HandleLightBulbOnWrite(
         unsigned long sig = 0;
         if(value)
             sig = 1;
-        else
-            sig = 0;
-        xQueueSend(MsgQueue, (unsigned long)&sig, 0);
+        xQueueSend(MsgQueue, &sig, 0);
         SaveAccessoryState();
         HAPAccessoryServerRaiseEvent(server, request->characteristic, request->service, request->accessory);
     }

@@ -29,6 +29,7 @@
 #include "HAPPlatformMFiTokenAuth+Init.h"
 #include "HAPPlatformRunLoop+Init.h"
 #include "wificonfig.h"
+#include "wificonnect.h"
 #if IP
 #include "HAPPlatformServiceDiscovery+Init.h"
 #include "HAPPlatformTCPStreamManager+Init.h"
@@ -111,8 +112,19 @@ static void InitializePlatform() {
     platform.hapPlatform.accessorySetup = &accessorySetup;
     
     // Initialise Wi-Fi
-    app_wifi_init();
-
+    unsigned long send_data_temp = 100;
+    xQueueSend(MsgQueue, &send_data_temp, 100 / portTICK_RATE_MS);
+    wifi_start_connect();
+    // wait connect
+    while(1){
+        EventBits_t uxBits = xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT, true, false, 100 / portTICK_RATE_MS);
+        if( (uxBits & CONNECTED_BIT) == CONNECTED_BIT){
+            break;
+        }
+        vTaskDelay(100 / portTICK_RATE_MS);
+    }
+    send_data_temp = 101;
+    xQueueSend(MsgQueue, &send_data_temp, 100 / portTICK_RATE_MS);
 #if IP
     // TCP stream manager.
     HAPPlatformTCPStreamManagerCreate(&platform.tcpStreamManager, &(const HAPPlatformTCPStreamManagerOptions) {
@@ -274,32 +286,6 @@ static void InitializeIP() {
     platform.hapAccessoryServerOptions.ip.accessoryServerStorage = &ipAccessoryServerStorage;
 
     platform.hapPlatform.ip.tcpStreamManager = &platform.tcpStreamManager;
-    // send initial signal
-    uint32_t send_data_temp = 100;
-    app_wifi_connect(wificonfig_read());
-    xQueueSend(MsgQueue, &send_data_temp, 100/portTICK_RATE_MS);
-    // wait network connect
-    while(1)
-    {
-        int rcv = -1;
-        if(xQueueReceive(netwrok_connect_signal, &rcv, 100/portTICK_RATE_MS) == pdPASS)
-        {
-            if(rcv)
-            {
-                break;
-            }
-            else
-            {
-                // reset wifi
-                ESP_ERROR_CHECK(esp_wifi_stop());
-                esp_event_loop_delete_default();
-                smart_wifi();
-            }   
-        }
-    }
-    // send complete signal
-    send_data_temp = 101;
-    xQueueSend(MsgQueue, &send_data_temp, 100 / portTICK_RATE_MS);
 }
 #endif
 
@@ -422,6 +408,6 @@ void app_main()
     ESP_ERROR_CHECK(nvs_flash_init());
     wificonfig_initial();
     MsgQueue = xQueueCreate(10, sizeof(unsigned long));
-    xTaskCreate(main_task, "main_task", 6 * 1024, NULL, 6, NULL);
-    xTaskCreate(task_led, "task_led", 6 * 1024, NULL, 5, NULL);
+    xTaskCreate(main_task, "main_task", 6 * 1024, NULL, 5, NULL);
+    xTaskCreate(task_led, "task_led", 6 * 1024, NULL, 6, NULL);
 }

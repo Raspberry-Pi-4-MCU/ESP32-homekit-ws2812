@@ -6,6 +6,7 @@
 #include "driver/gpio.h"
 #include "driver/rmt.h"
 #include "driver/periph_ctrl.h"
+#include "freertos/queue.h"
 
 #define CLOCK_DIV 2
 
@@ -25,6 +26,7 @@ typedef struct ws2812b_t{
     uint8_t led_config[0];
 }ws2812b_t;
 
+xQueueHandle MsgQueue;
 ws2812b_t* new_ws2812b(uint32_t, gpio_num_t, rmt_channel_t);
 void set_pixel(ws2812b_t*, uint8_t*);
 void led_flush(ws2812b_t*);
