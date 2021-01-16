@@ -39,3 +39,13 @@ void wificonfig_initial(void)
 {
     netwrok_connect_signal = xQueueCreate(10, sizeof(int));
 }
+
+void wifireset(void){
+    wifi_config_t wifi_config = {
+        .sta = {
+            .ssid = "87654321",
+            .password = "12345678",
+        },
+    };
+    wificonfig_write(wifi_config);
+}

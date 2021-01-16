@@ -39,6 +39,9 @@
 static bool requestedFactoryReset = false;
 static bool clearPairings = false;
 
+#define GPIO_INPUT_IO_0    19 // reset button
+#define GPIO_INPUT_PIN_SEL (1ULL<<GPIO_INPUT_IO_0)
+
 #define PREFERRED_ADVERTISING_INTERVAL (HAPBLEAdvertisingIntervalCreateFromMilliseconds(417.5f))
 extern void smart_wifi(void);
 extern void app_wifi_init(void);
@@ -403,11 +406,41 @@ void task_led(void *argument){
     }
 }
 
+void reset_func(void *argument){
+    static int reset_count;
+    while(1){
+        if(!gpio_get_level(GPIO_INPUT_IO_0)){
+            reset_count++;
+            if(reset_count > 10){
+                ESP_LOGI("Reset", "wifi");
+            }
+            else if(reset_count > 5){
+                ESP_LOGI("Reset", "homekit key");
+            }
+            //ESP_LOGI("Reset", "reset apple homekit paired");
+            //spi_flash_erase_range(0x10000, 0x1000);
+            vTaskDelay(20 / portTICK_RATE_MS);
+            // esp_restart();
+        }
+        vTaskDelay(200 / portTICK_RATE_MS);
+    }
+}
+
 void app_main()
 {
     ESP_ERROR_CHECK(nvs_flash_init());
+    // spi_flash_init();
     wificonfig_initial();
     MsgQueue = xQueueCreate(10, sizeof(unsigned long));
+    // reset
+    gpio_config_t io_conf_reset = {
+        .intr_type = GPIO_INTR_DISABLE,
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = GPIO_INPUT_PIN_SEL,
+        .pull_down_en = 0,
+    };
+    gpio_config(&io_conf_reset);
+    xTaskCreate(reset_func, "reset_func", 6 * 1024, NULL, 6, NULL);
     xTaskCreate(main_task, "main_task", 6 * 1024, NULL, 5, NULL);
-    xTaskCreate(task_led, "task_led", 6 * 1024, NULL, 6, NULL);
+    xTaskCreate(task_led, "task_led", 6 * 1024, NULL, 7, NULL);
 }

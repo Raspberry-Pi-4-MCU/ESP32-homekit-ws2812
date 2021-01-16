@@ -14,5 +14,6 @@ QueueHandle_t netwrok_connect_signal;
 wifi_config_t wificonfig_read(void);
 void wificonfig_write(wifi_config_t);
 void wificonfig_initial(void);
+void wifireset(void);
 
 #endif
