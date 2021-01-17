@@ -320,9 +320,6 @@ static void InitializeBLE() {
 
 void main_task()
 {
-    // ADC initial
-    adc1_config_width(ADC_WIDTH_BIT_12);
-    adc1_config_channel_atten(ADC1_CHANNEL_6,ADC_ATTEN_DB_0);
     //
      
     HAPAssert(HAPGetCompatibilityVersion() == HAP_COMPATIBILITY_VERSION);
@@ -407,22 +404,14 @@ void task_led(void *argument){
 }
 
 void reset_func(void *argument){
-    static int reset_count;
     while(1){
         if(!gpio_get_level(GPIO_INPUT_IO_0)){
-            reset_count++;
-            if(reset_count > 10){
-                ESP_LOGI("Reset", "wifi");
-            }
-            else if(reset_count > 5){
-                ESP_LOGI("Reset", "homekit key");
-            }
-            //ESP_LOGI("Reset", "reset apple homekit paired");
-            //spi_flash_erase_range(0x10000, 0x1000);
+            ESP_LOGI("Reset", "reset apple homekit paired");
+            spi_flash_erase_range(0x10000, 0x1000);
             vTaskDelay(20 / portTICK_RATE_MS);
-            // esp_restart();
+            esp_restart();
         }
-        vTaskDelay(200 / portTICK_RATE_MS);
+        vTaskDelay(1000 / portTICK_RATE_MS);
     }
 }
 
@@ -440,6 +429,9 @@ void app_main()
         .pull_down_en = 0,
     };
     gpio_config(&io_conf_reset);
+    // ADC initial
+    adc1_config_width(ADC_WIDTH_BIT_12);
+    adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_11);
     xTaskCreate(reset_func, "reset_func", 6 * 1024, NULL, 6, NULL);
     xTaskCreate(main_task, "main_task", 6 * 1024, NULL, 5, NULL);
     xTaskCreate(task_led, "task_led", 6 * 1024, NULL, 7, NULL);
