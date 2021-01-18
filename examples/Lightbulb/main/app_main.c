@@ -19,6 +19,7 @@
 #include "nvs_flash.h"
 #include "esp_wifi.h"
 #include "freertos/event_groups.h"
+#include "freertos/semphr.h"
 #define IP 1
 #include "HAP.h"
 #include "HAPPlatform+Init.h"
@@ -30,6 +31,7 @@
 #include "HAPPlatformRunLoop+Init.h"
 #include "wificonfig.h"
 #include "wificonnect.h"
+#include "sht20.h"
 #if IP
 #include "HAPPlatformServiceDiscovery+Init.h"
 #include "HAPPlatformTCPStreamManager+Init.h"
@@ -38,11 +40,12 @@
 #include <signal.h>
 static bool requestedFactoryReset = false;
 static bool clearPairings = false;
-
 #define GPIO_INPUT_IO_0    19 // reset button
 #define GPIO_INPUT_PIN_SEL (1ULL<<GPIO_INPUT_IO_0)
-
 #define PREFERRED_ADVERTISING_INTERVAL (HAPBLEAdvertisingIntervalCreateFromMilliseconds(417.5f))
+
+SemaphoreHandle_t SHT20_mutex;
+
 extern void smart_wifi(void);
 extern void app_wifi_init(void);
 extern esp_err_t app_wifi_connect(wifi_config_t);
@@ -415,6 +418,17 @@ void reset_func(void *argument){
     }
 }
 
+void temphum_task(void* argument){
+    while(1){
+        if(xSemaphoreTake(SHT20_mutex, (TickType_t)10) == pdTRUE){
+            temphum temphumobj = readtemphum();
+            xQueueSend(SHT20_queue, &temphumobj, 100 / portTICK_RATE_MS);
+            xSemaphoreGive(SHT20_mutex);
+        }    
+        vTaskDelay(200 / portTICK_RATE_MS);
+    }
+}
+
 void app_main()
 {
     ESP_ERROR_CHECK(nvs_flash_init());
@@ -430,9 +444,13 @@ void app_main()
     };
     gpio_config(&io_conf_reset);
     // ADC initial
-    adc1_config_width(ADC_WIDTH_BIT_12);
-    adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_11);
+    //adc1_config_width(ADC_WIDTH_BIT_12);
+    //adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_11);
+    sht20_initial(22, 21);
+    SHT20_mutex = xSemaphoreCreateMutex();
+    SHT20_queue = xQueueCreate(10, sizeof(temphum));
     xTaskCreate(reset_func, "reset_func", 6 * 1024, NULL, 6, NULL);
     xTaskCreate(main_task, "main_task", 6 * 1024, NULL, 5, NULL);
     xTaskCreate(task_led, "task_led", 6 * 1024, NULL, 7, NULL);
+    xTaskCreate(temphum_task, "temphum_task", 6 * 1024, NULL, 8, NULL);
 }

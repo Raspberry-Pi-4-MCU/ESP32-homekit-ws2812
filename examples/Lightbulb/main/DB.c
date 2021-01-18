@@ -44,10 +44,14 @@
 #define kIID_CO                ((uint64_t) 0x0034)
 #define kIID_COServiceSignature ((uint64_t) 0x0035)
 #define kIID_COName             ((uint64_t) 0x0036)
-
-
 #define kIID_COdetect            ((uint64_t) 0x0037)
 #define kIID_COdetectServiceSignature ((uint64_t) 0x0038)
+
+#define KIID_TEMP ((uint64_t)0x0039)
+#define KIID_TEMPService ((uint64_t)0x0040)
+#define KIID_TEMPName ((uint64_t)0x0041)
+#define KIID_TEMPdetect ((uint64_t)0x0042)
+#define KIID_TEMPCharacteristic ((uint64_t)0x0043)
 
 HAP_STATIC_ASSERT(kAttributeCount == 9 + 3 + 5 + 4, AttributeCount_mismatch);
 
@@ -515,6 +519,27 @@ const HAPUInt8Characteristic CODetectCharacteristic = {
     .callbacks = { .handleRead = HandleCODetectRead, .handleWrite = NULL }
 };
 
+const HAPFloatCharacteristic TEMPDetectCharacteristic = {
+    .format = kHAPCharacteristicFormat_Float,
+    .iid = KIID_TEMPdetect,
+    .characteristicType = &kHAPCharacteristicType_CurrentTemperature,
+    .debugDescription = kHAPCharacteristicDebugDescription_CurrentTemperature,
+    .manufacturerDescription = NULL,
+    .properties = { .readable = true,
+                    .writable = false,
+                    .supportsEventNotification = true,
+                    .hidden = false,
+                    .requiresTimedWrite = false,
+                    .supportsAuthorizationData = false,
+                    .ip = { .controlPoint = false, .supportsWriteResponse = false },
+                    .ble = { .supportsBroadcastNotification = true,
+                             .supportsDisconnectedNotification = true,
+                             .readableWithoutSecurity = false,
+                             .writableWithoutSecurity = false } },
+    .constraints = { .maximumValue = 0, .minimumValue = 100 },
+    .callbacks = { .handleRead = HandleTEMPRead, .handleWrite = NULL }
+};
+
 /**
  * The Light Bulb service that contains the 'On' characteristic.
  */
@@ -543,5 +568,19 @@ const HAPService COService = {
     .linkedServices = NULL,
     .characteristics = (const HAPCharacteristic* const[]) { &COCharacteristic,
                                                             &CODetectCharacteristic,
+                                                            NULL }
+};
+
+/**
+* 
+*/
+const HAPService TEMPService = {
+    .iid = KIID_TEMP,
+    .serviceType = &kHAPServiceType_TemperatureSensor,
+    .debugDescription = kHAPServiceDebugDescription_TemperatureSensor,
+    .name = "TEMP",
+    .properties = { .primaryService = true, .hidden = false, .ble = { .supportsConfiguration = false } },
+    .linkedServices = NULL,
+    .characteristics = (const HAPCharacteristic* const[]) { 
                                                             NULL }
 };

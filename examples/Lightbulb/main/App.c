@@ -206,6 +206,20 @@ HAPError HandleCODetectRead(
         return kHAPError_None;
 }   
 
+HAP_RESULT_USE_CHECK
+HAPError HandleTEMPRead(
+        HAPAccessoryServerRef* server HAP_UNUSED,
+        const HAPFloatCharacteristicReadRequest* request HAP_UNUSED,
+        float* value,
+        void* _Nullable context HAP_UNUSED){
+        float tempvalue = readtemphum().temp;
+        if(tempvalue < 0)
+            tempvalue = 0;
+        else if(tempvalue > 100)
+            tempvalue = 100;
+        *value = tempvalue;
+        return kHAPError_None;
+}  
 //----------------------------------------------------------------------------------------------------------------------
 
 void AccessoryNotification(

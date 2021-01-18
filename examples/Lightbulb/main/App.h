@@ -13,6 +13,7 @@
 #ifndef APP_H
 #define APP_H
 #include <driver/adc.h>
+// queue.h 
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,6 +25,10 @@ extern "C" {
 #endif
 
 #include "ws2812b.h"
+#include "freertos/queue.h"
+#include "sht20.h"
+
+QueueHandle_t SHT20_queue;
 /**
  * Identify routine. Used to locate the accessory.
  */
@@ -67,6 +72,14 @@ HAPError HandleCODetectRead(
         HAPAccessoryServerRef* server,
         const HAPUInt8CharacteristicReadRequest* request,
         uint8_t* value,
+        void* _Nullable context);
+
+
+HAP_RESULT_USE_CHECK
+HAPError HandleTEMPRead(
+        HAPAccessoryServerRef* server,
+        const HAPFloatCharacteristicReadRequest* request,
+        float* value,
         void* _Nullable context);
 
 /**

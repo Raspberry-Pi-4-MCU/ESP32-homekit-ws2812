@@ -59,12 +59,15 @@ extern const HAPService lightBulbService;
 
 extern const HAPService COService;
 
+extern const HAPService TEMPService;
 /**
  * The 'On' characteristic of the Light Bulb service.
  */
 extern const HAPBoolCharacteristic lightBulbOnCharacteristic;
 
 extern const HAPFloatCharacteristic COCharacteristic;
+
+extern const HAPFloatCharacteristic TEMPDetectCharacteristic;
 
 extern const HAPUInt8Characteristic CODetectCharacteristic;
 
